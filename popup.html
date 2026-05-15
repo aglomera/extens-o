@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Groq Vision</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111;
+      --border: #222;
+      --accent: #f97316;
+      --accent2: #fb923c;
+      --text: #e5e5e5;
+      --muted: #555;
+      --green: #22c55e;
+      --red: #ef4444;
+      --radius: 4px;
+    }
+
+    body {
+      width: 400px;
+      min-height: 200px;
+      max-height: 600px;
+      overflow-y: auto;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scrollbar */
+    body::-webkit-scrollbar { width: 4px; }
+    body::-webkit-scrollbar-track { background: var(--bg); }
+    body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* Grid bg */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(249,115,22,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(249,115,22,0.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 16px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+    .logo span { color: var(--accent); }
+
+    .tag {
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 2px;
+    }
+
+    /* Field */
+    .field { display: flex; flex-direction: column; gap: 5px; }
+
+    .field-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    input[type="password"], textarea, select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      padding: 8px 10px;
+      border-radius: var(--radius);
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    select option { background: #111; }
+
+    textarea { resize: none; line-height: 1.6; min-height: 64px; }
+
+    /* Screenshot area */
+    .screenshot-area {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-screenshot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1.5px dashed var(--border);
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      padding: 14px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      width: 100%;
+      letter-spacing: 1px;
+    }
+
+    .btn-screenshot:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(249,115,22,0.04);
+    }
+
+    .screenshot-icon { font-size: 18px; }
+
+    /* Preview */
+    #preview-wrap {
+      display: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #0d0d0d;
+    }
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 9px;
+      color: var(--muted);
+    }
+
+    #preview-img {
+      width: 100%;
+      max-height: 160px;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border: none;
+      padding: 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      width: 100%;
+    }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-primary:active { transform: scale(0.99); }
+    .btn-primary:disabled { background: #222; color: #444; cursor: not-allowed; }
+
+    .btn-small {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      padding: 3px 8px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+      letter-spacing: 1px;
+    }
+    .btn-small:hover { border-color: var(--red); color: var(--red); }
+
+    /* Response */
+    #response-wrap {
+      display: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      overflow: hidden;
+    }
+
+    .response-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      display: inline-block;
+      margin-right: 5px;
+      animation: pulse 1.5s infinite;
+    }
+    .status-dot.error { background: var(--red); animation: none; }
+    .status-dot.loading { background: var(--accent); animation: pulse 0.8s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    #response-text {
+      padding: 12px;
+      font-size: 11px;
+      line-height: 1.8;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    #response-text::-webkit-scrollbar { width: 3px; }
+    #response-text::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .meta-row {
+      display: flex;
+      gap: 12px;
+      padding: 6px 10px;
+      border-top: 1px solid var(--border);
+      font-size: 9px;
+      color: var(--muted);
+    }
+    .meta-item span { color: var(--accent); }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      padding: 3px 8px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .loader {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border: 2px solid #333;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hint {
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+<div class="inner">
+
+  <header>
+    <div class="logo">groq<span>.</span>vision</div>
+    <div class="tag">Extension</div>
+  </header>
+
+  <!-- API Key -->
+  <div class="field">
+    <div class="field-label">API Key</div>
+    <input type="password" id="api-key" placeholder="gsk_..." autocomplete="off" />
+    <p class="hint">// Salva localmente no navegador.</p>
+  </div>
+
+  <!-- Model -->
+  <div class="field">
+    <div class="field-label">Modelo</div>
+    <select id="model">
+      <option value="meta-llama/llama-4-scout-17b-16e-instruct">llama-4-scout-17b (recomendado)</option>
+      <option value="llama-3.2-11b-vision-preview">llama-3.2-11b-vision-preview</option>
+      <option value="llama-3.2-90b-vision-preview">llama-3.2-90b-vision-preview</option>
+    </select>
+  </div>
+
+  <!-- Screenshot -->
+  <div class="field">
+    <div class="field-label">Screenshot</div>
+    <div class="screenshot-area">
+      <button class="btn-screenshot" id="screenshot-btn" onclick="takeScreenshot()">
+        <span class="screenshot-icon">⬡</span>
+        <span>Tirar print da aba atual</span>
+      </button>
+      <div id="preview-wrap">
+        <div class="preview-header">
+          <span id="tab-title">—</span>
+          <button class="btn-small" onclick="clearScreenshot()">✕ remover</button>
+        </div>
+        <img id="preview-img" src="" alt="Screenshot" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt -->
+  <div class="field">
+    <div class="field-label">Prompt</div>
+    <textarea id="prompt">Descreva detalhadamente o que você vê nessa página.</textarea>
+  </div>
+
+  <!-- Analyze button -->
+  <button class="btn-primary" id="submit-btn" onclick="sendRequest()">
+    ▶ &nbsp;Analisar screenshot
+  </button>
+
+  <!-- Response -->
+  <div id="response-wrap">
+    <div class="response-header">
+      <span><span class="status-dot" id="status-dot"></span><span id="status-text">pronto</span></span>
+      <button class="copy-btn" onclick="copyResponse()">[ copiar ]</button>
+    </div>
+    <div id="response-text"></div>
+    <div class="meta-row" id="meta-row" style="display:none">
+      <span class="meta-item">in: <span id="tok-in">—</span></span>
+      <span class="meta-item">out: <span id="tok-out">—</span></span>
+      <span class="meta-item">modelo: <span id="meta-model">—</span></span>
+    </div>
+  </div>
+
+</div>
+<script src="popup.js"></script>
+</body>
+</html>
